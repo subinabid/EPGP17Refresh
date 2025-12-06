@@ -1,0 +1,41 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+*.log
+*.pot
+.Python
+
+# Virtual environments
+.venv
+.venv/
+venv/
+env/
+.env/
+.virtualenv/
+virtualenv/
+
+
+# Django-specific
+# db.sqlite3
+local_settings.py
+media/
+static_collected/
+
+# IDE-specific (e.g., PyCharm, VS Code)
+.idea/
+.vscode/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+
+# Other
+.coverage
+.tox/
+.eggs/
+.python-version
