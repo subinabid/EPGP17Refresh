@@ -12,4 +12,9 @@ urlpatterns = [
     path("users/update/<int:pk>", views.update_user_admin, name="update-user"),
     path("users/batch", views.batch_info, name="batch-info"),
     path("users/social", views.get_social_links, name="social-links"),
+    path("electives/", views.list_electives, name="elective-list"),
+    path("electives/<int:pk>", views.elective_detail, name="elective-detail"),
+    path("electives/<int:pk>/takers", views.elective_takers, name="elective-takers"),
+    path("electives/enrolled/", views.enrolled_elective, name="elective-enrolled"),
+    path("electives/enroll/<int:pk>", views.enroll_elective, name="elective-enroll"),
 ]

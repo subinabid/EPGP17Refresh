@@ -19,8 +19,11 @@ from .serializers import (
     DetailUserSerializer,
     BatchInfoSerializer,
     SocialLinksSerializer,
+    ElectiveOfferingSmallSerializer,
+    ElectiveEnrollmentSerializer,
+    ElectiveDetailSerializer,
 )
-from .models import BatchInfo, SocialLinks
+from .models import BatchInfo, SocialLinks, ElectiveOffering, ElectiveEnrollment
 
 
 ################################################################################
@@ -273,3 +276,122 @@ def get_social_links(request):
             return Response(
                 {"error": f"User with id {request.user} does not exist"}, status=404
             )
+
+
+################################################################################
+## Electives
+################################################################################
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_electives(request):
+    """List all Elective offerings."""
+
+    electives = ElectiveOffering.objects.all().order_by(
+        "course__area", "course__course_code"
+    )
+    serializer = ElectiveOfferingSmallSerializer(
+        electives, many=True, context={"request": request}
+    )
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def elective_detail(request, pk):
+    """Details of a specific Elective offering by ID."""
+
+    try:
+        elective_offering = ElectiveOffering.objects.get(id=pk)
+        serializer = ElectiveDetailSerializer(
+            elective_offering, context={"request": request}
+        )
+        return Response(serializer.data)
+    except ElectiveOffering.DoesNotExist:
+        return Response(
+            {"error": f"ElectiveOffering with id {pk} does not exist"}, status=404
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def elective_takers(request, pk):
+    """List of users enrolled in a specific Elective offering by ID."""
+
+    try:
+        elective_offering = ElectiveOffering.objects.get(id=pk)
+        enrollments = ElectiveEnrollment.objects.filter(
+            elective_offering=elective_offering
+        )
+        users = [enrollment.user for enrollment in enrollments]
+        serializer = DetailUserSerializer(
+            users, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
+    except ElectiveOffering.DoesNotExist:
+        return Response(
+            {"error": f"ElectiveOffering with id {pk} does not exist"}, status=404
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def enrolled_elective(request):
+    """Enrolled electives of the authenticated user."""
+
+    enrollments = ElectiveEnrollment.objects.filter(user=request.user)
+    serializer = ElectiveEnrollmentSerializer(
+        enrollments, many=True, context={"request": request}
+    )
+    return Response(serializer.data)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def enroll_elective(request, pk):
+    """Enroll the authenticated user in an elective offering."""
+    if request.method == "POST":
+        try:
+            elective_offering = ElectiveOffering.objects.get(id=pk)
+        except ElectiveOffering.DoesNotExist:
+            return Response(
+                {"error": f"ElectiveOffering with id {pk} does not exist"}, status=404
+            )
+
+        # Check if already enrolled
+        if ElectiveEnrollment.objects.filter(
+            user=request.user, elective_offering=elective_offering
+        ).exists():
+            return Response(
+                {"error": "User is already enrolled in this elective offering"},
+                status=400,
+            )
+
+        # Enroll the user
+        enrollment = ElectiveEnrollment.objects.create(
+            user=request.user, elective_offering=elective_offering
+        )
+        serializer = ElectiveEnrollmentSerializer(enrollment)
+        return Response(serializer.data, status=201)
+
+    elif request.method == "GET":
+        # Checck if the user is already enrolled and return True/False
+
+        try:
+            enrollments = ElectiveEnrollment.objects.filter(user=request.user)
+
+            context = {
+                "user": request.user.username,
+                "elective_offering_id": pk,
+                "elective": ElectiveOffering.objects.get(id=pk).course.__str__(),
+                "enrolled": pk
+                in [enrollment.elective_offering.id for enrollment in enrollments],
+            }
+            return Response(context)
+        except ElectiveOffering.DoesNotExist:
+            return Response(
+                {"error": f"ElectiveOffering with id {pk} does not exist"}, status=404
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

@@ -180,11 +180,12 @@ SALUTATIONS = (
 AREAS = (
     ("FAC", "Finance, Accounting, and Control"),
     ("MM", "Marketing Management"),
-    ("HLAM", "Humanities, Leadership, and Advanced Management"),
-    ("OM", "Operations Management"),
-    ("STR", "Strategy"),
+    ("HLAM", "Humanities, Liberal Arts, and Management"),
+    ("SM", "Strategic Management"),
     ("IS", "Information Systems"),
     ("ECON", "Economics"),
+    ("QMOM", "Quantitative Methods and Operations Management"),
+    ("HR", "Human Resources"),
 )
 
 
@@ -200,7 +201,7 @@ class Professor(models.Model):
     phone = models.CharField(max_length=15, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.salutation} {self.name}"
 
 
 class Elective(models.Model):
@@ -215,7 +216,7 @@ class Elective(models.Model):
     credits = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.course_code} - {self.course_name}"
+        return f"{self.course_code} - {self.course_name} - {self.instructor}"
 
 
 class ElectiveOffering(models.Model):
@@ -230,7 +231,7 @@ class ElectiveOffering(models.Model):
     section = models.CharField(max_length=10, null=True, blank=True, default="")
 
     def __str__(self):
-        return f"Batch {self.epgp_batch} - {self.course} - Q{self.term} - Track {self.track} - Section {self.section}"
+        return f"Batch {self.epgp_batch} - Q{self.term} - {self.course} - Track {self.track} - Section {self.section}"
 
 
 class ElectiveEnrollment(models.Model):

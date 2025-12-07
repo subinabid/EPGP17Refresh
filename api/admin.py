@@ -38,8 +38,8 @@ class ProfessorAdmin(admin.ModelAdmin):
 
 @admin.register(Elective)
 class ElectiveAdmin(admin.ModelAdmin):
-    list_display = ("course_code", "course_name", "instructor", "credits")
-    search_fields = ("course_code", "course_name", "instructor")
+    list_display = ("area", "course_code", "course_name", "instructor", "credits")
+    search_fields = ("area", "course_code", "course_name", "instructor")
 
 
 @admin.register(ElectiveOffering)

@@ -1,6 +1,45 @@
 from django.contrib.auth.models import User, Group  # type: ignore
-from .models import BatchInfo, SocialLinks, Employment
+from .models import (
+    BatchInfo,
+    SocialLinks,
+    Employment,
+    Professor,
+    Elective,
+    ElectiveOffering,
+    ElectiveEnrollment,
+)
 from rest_framework import serializers  # type: ignore
+
+
+######################################################################
+## SocialLinks, BatchInfo, Employment serializers
+######################################################################
+
+
+class SocialLinksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SocialLinks
+        fields = "__all__"
+        read_only_fields = ["user"]
+
+
+class EmploymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employment
+        fields = "__all__"
+        read_only_fields = ["user"]
+
+
+class BatchInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BatchInfo
+        fields = "__all__"
+        read_only_fields = ["user"]
+
+
+######################################################################
+## user related serializers
+######################################################################
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -16,36 +55,59 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class DetailUserSerializer(serializers.ModelSerializer):
+    batch_info = BatchInfoSerializer(read_only=True)
+
     class Meta:
         model = User
-        fields = [
-            "id",
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "is_staff",
-            "is_active",
-            "date_joined",
-        ]
+        fields = ["username", "email", "first_name", "last_name", "batch_info"]
 
 
-class BatchInfoSerializer(serializers.ModelSerializer):
+################################################################################
+## Elective related serializers
+################################################################################
+
+
+class InstructorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = BatchInfo
-        fields = "__all__"
-        read_only_fields = ["user"]
+        model = Professor
+        fields = ["salutation", "name", "area"]
 
 
-class SocialLinksSerializer(serializers.ModelSerializer):
+class ElectiveSerializer(serializers.ModelSerializer):
+    instructor = InstructorSerializer(read_only=True)
+
     class Meta:
-        model = SocialLinks
+        model = Elective
         fields = "__all__"
-        read_only_fields = ["user"]
 
 
-class EmploymentSerializer(serializers.ModelSerializer):
+class ElectiveDetailSerializer(serializers.ModelSerializer):
+    course = ElectiveSerializer(read_only=True)
+
     class Meta:
-        model = Employment
+        model = ElectiveOffering
         fields = "__all__"
-        read_only_fields = ["user"]
+
+
+class ElectiveOfferingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ElectiveOffering
+        fields = "__all__"
+
+
+class ElectiveOfferingSmallSerializer(serializers.ModelSerializer):
+    course = serializers.StringRelatedField()
+
+    class Meta:
+        model = ElectiveOffering
+        fields = ["id", "course", "track", "section"]
+        read_only_fields = ["id"]
+
+
+class ElectiveEnrollmentSerializer(serializers.ModelSerializer):
+    elective_offering = ElectiveOfferingSmallSerializer(read_only=True)
+
+    class Meta:
+        model = ElectiveEnrollment
+        fields = ["id", "elective_offering"]
+        read_only_fields = ["id"]
