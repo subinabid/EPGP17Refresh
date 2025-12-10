@@ -9,6 +9,9 @@ wheels/
 *.pot
 .Python
 
+# Environment
+.env
+
 # Virtual environments
 .venv
 .venv/

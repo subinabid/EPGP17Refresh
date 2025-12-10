@@ -1,6 +1,10 @@
 """Django (6.0) settings for EPGP project."""
 
+import os
+from dotenv import load_dotenv  # type: ignore
 from pathlib import Path
+
+load_dotenv()  # Load environment variables from .env file
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-tcqpbt8no=w&e(_za#k2m=fdu6i2ee$!silq*st8iql(poyy7z"
@@ -57,9 +61,17 @@ WSGI_APPLICATION = "EPGP.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME", "your_db_name"),
+        "USER": os.getenv("DB_USER", "your_db_user"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "your_db_password"),
+        "HOST": os.getenv("DB_HOST", "your_db_host"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
+    # "default": {
+    #     "ENGINE": "django.db.backends.sqlite3",
+    #     "NAME": BASE_DIR / "db.sqlite3",
+    # }
 }
 
 
