@@ -10,7 +10,7 @@ load_dotenv()  # Load environment variables from .env file
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = False
-ALLOWED_HOSTS: list[str] = ["*"]
+ALLOWED_HOSTS: list[str] = ["epgp-api.hard-copy.in"]
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 # SECURE_SSL_REDIRECT = True
