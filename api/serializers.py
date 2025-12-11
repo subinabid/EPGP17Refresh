@@ -16,6 +16,13 @@ from rest_framework import serializers  # type: ignore
 ######################################################################
 
 
+class BatchInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BatchInfo
+        fields = "__all__"
+        read_only_fields = ["user"]
+
+
 class SocialLinksSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialLinks
@@ -26,13 +33,6 @@ class SocialLinksSerializer(serializers.ModelSerializer):
 class EmploymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employment
-        fields = "__all__"
-        read_only_fields = ["user"]
-
-
-class BatchInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BatchInfo
         fields = "__all__"
         read_only_fields = ["user"]
 
@@ -56,10 +56,18 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 
 class DetailUserSerializer(serializers.ModelSerializer):
     batch_info = BatchInfoSerializer(read_only=True)
+    social_links = SocialLinksSerializer()
 
     class Meta:
         model = User
-        fields = ["username", "email", "first_name", "last_name", "batch_info"]
+        fields = [
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "batch_info",
+            "social_links",
+        ]
 
 
 ################################################################################

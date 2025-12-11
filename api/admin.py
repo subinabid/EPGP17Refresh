@@ -14,7 +14,16 @@ from .models import (
 
 @admin.register(BatchInfo)
 class BatchInfoAdmin(admin.ModelAdmin):
-    list_display = ("epgp_batch", "epgp_group", "roll_number", "user")
+    list_display = (
+        "user",
+        "epgp_batch",
+        "epgp_group",
+        "roll_number",
+        "studyCenterCity",
+        "user__first_name",
+        "user__last_name",
+        "user__email",
+    )
     search_fields = ("user__username", "user__email")
 
 

@@ -139,17 +139,17 @@ class SocialLinks(models.Model):
         User, on_delete=models.CASCADE, related_name="social_links"
     )
     personalEmail = models.EmailField(null=True, blank=True)
-    phone = models.CharField(max_length=10, null=True, blank=True)
-    whatsapp = models.CharField(max_length=10, null=True, blank=True)
-    telegram = models.CharField(max_length=10, null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    whatsapp = models.CharField(max_length=20, null=True, blank=True)
+    telegram = models.CharField(max_length=20, null=True, blank=True)
     linkedin = models.URLField(null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
-    instagram = models.CharField(max_length=100, null=True, blank=True)
+    instagram = models.URLField(null=True, blank=True)
     github = models.URLField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
     youtube = models.URLField(null=True, blank=True)
-    other = models.URLField(null=True, blank=True)
+    other = models.TextField(null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
 
 

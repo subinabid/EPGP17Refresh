@@ -1,10 +1,8 @@
 # EPGP
 
-
+A community App for IIMK EPGP group
 
 ## todo
-- implement token auth
-- onboard first users
-- electives
+
 - calendar
-- linkedin API? 
+- linkedin API?

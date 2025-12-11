@@ -98,6 +98,30 @@ def create_user(request):
             return Response({"error": str(e)}, status=400)
 
 
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """Change password for the authenticated user.
+
+    Required fields: old_password, new_password
+    """
+    old_password = request.data.get("old_password")
+    new_password = request.data.get("new_password")
+
+    if not all([old_password, new_password]):
+        return Response(
+            {"error": "old_password and new_password are required"}, status=400
+        )
+
+    user = request.user
+    if not user.check_password(old_password):
+        return Response({"error": "Old password is incorrect"}, status=400)
+
+    user.set_password(new_password)
+    user.save()
+    return Response({"message": "Password changed successfully"}, status=200)
+
+
 @api_view(["PUT", "PATCH"])
 @permission_classes([IsAdminUser])
 def update_user_admin(request, pk):
@@ -289,7 +313,7 @@ def list_electives(request):
     """List all Elective offerings."""
 
     electives = ElectiveOffering.objects.all().order_by(
-        "course__area", "course__course_code"
+        "course__area", "course__course_code", "section"
     )
     serializer = ElectiveOfferingSmallSerializer(
         electives, many=True, context={"request": request}
