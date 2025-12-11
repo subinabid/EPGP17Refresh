@@ -8,9 +8,12 @@ from pathlib import Path
 load_dotenv()  # Load environment variables from .env file
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = "django-insecure-tcqpbt8no=w&e(_za#k2m=fdu6i2ee$!silq*st8iql(poyy7z"
-DEBUG = True  # Set to False in production
-ALLOWED_HOSTS: list[str] = []
+SECRET_KEY = os.getenv("SECRET_KEY")
+DEBUG = False
+ALLOWED_HOSTS: list[str] = ["*"]
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
 
 
 # Application definition
