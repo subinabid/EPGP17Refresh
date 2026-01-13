@@ -77,3 +77,7 @@ class ElectiveEnrollmentAdmin(admin.ModelAdmin):
         "elective_offering__course__course_code",
         "elective_offering__course__course_name",
     )
+
+
+admin.site.site_title = "EPGP"
+admin.site.site_header = "EPGP Admin"
