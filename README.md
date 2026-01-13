@@ -2,7 +2,13 @@
 
 A community App for IIMK EPGP group
 
+## Hosting
+
+The backend is hosted on render.com with database on neon.tech
+
+https://render.com/docs/deploy-django
+
 ## todo
 
-- calendar
-- linkedin API?
+- Elective calendar
+- linkedin API
