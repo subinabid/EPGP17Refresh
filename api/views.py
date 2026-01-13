@@ -11,10 +11,12 @@ from rest_framework.response import Response  # type: ignore
 from rest_framework.authentication import (  # type: ignore
     SessionAuthentication,
     BasicAuthentication,
-    TokenAuthentication,
 )
+from rest_framework_simplejwt.authentication import JWTAuthentication  # type: ignore
 from rest_framework.permissions import IsAuthenticated, IsAdminUser  # type: ignore
 from .serializers import (
+    SCSerilazer,
+    POCSerializer,
     UserSerializer,
     DetailUserSerializer,
     BatchInfoSerializer,
@@ -23,7 +25,14 @@ from .serializers import (
     ElectiveEnrollmentSerializer,
     ElectiveDetailSerializer,
 )
-from .models import BatchInfo, SocialLinks, ElectiveOffering, ElectiveEnrollment
+from .models import (
+    StudyCenter,
+    StudyCentrePOC,
+    BatchInfo,
+    SocialLinks,
+    ElectiveOffering,
+    ElectiveEnrollment,
+)
 
 
 ################################################################################
@@ -40,7 +49,6 @@ class ListUsers(APIView):
     authentication_classes = [
         SessionAuthentication,
         BasicAuthentication,
-        TokenAuthentication,
     ]
     permission_classes = [IsAdminUser]
 
@@ -191,12 +199,17 @@ def update_user(request, pk):
 
 
 @api_view(["GET"])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
+@authentication_classes(
+    [
+        JWTAuthentication,
+        SessionAuthentication,
+        BasicAuthentication,
+    ]
+)
 @permission_classes([IsAuthenticated])
 def userinfo(request):
     content = {
         "user": str(request.user),
-        "auth": str(request.auth),
         "detail": DetailUserSerializer(request.user).data,
     }
     return Response(content)
@@ -419,3 +432,40 @@ def enroll_elective(request, pk):
             )
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
+
+################################################################################
+## Study Centre
+################################################################################
+
+
+class StudyCentresView(APIView):
+    """List all study centres"""
+
+    authentication_classes = [
+        JWTAuthentication,
+        SessionAuthentication,
+        BasicAuthentication,
+    ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        sc = StudyCenter.objects.all().order_by("state")
+        serializer = SCSerilazer(sc, many=True, context={"request": request})
+        return Response(serializer.data)
+
+
+class StudyCentrePOCView(APIView):
+    """List all study centre POCs"""
+
+    authentication_classes = [
+        JWTAuthentication,
+        SessionAuthentication,
+        BasicAuthentication,
+    ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, format=None):
+        poc = StudyCentrePOC.objects.filter(centre__id=id)
+        serializer = POCSerializer(poc, many=True, context={"request": request})
+        return Response(serializer.data)

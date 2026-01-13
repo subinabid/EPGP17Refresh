@@ -29,4 +29,6 @@ urlpatterns = [
     path("electives/<int:pk>/takers", views.elective_takers, name="elective-takers"),
     path("electives/enrolled/", views.enrolled_elective, name="elective-enrolled"),
     path("electives/enroll/<int:pk>", views.enroll_elective, name="elective-enroll"),
+    path("centres", views.StudyCentresView.as_view()),
+    path("centre/poc/<int:id>", views.StudyCentrePOCView.as_view()),
 ]

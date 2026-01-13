@@ -43,6 +43,8 @@ STATES = (
 )
 
 STUDY_CENTER_STATES = (
+    ("AS", "Assam"),
+    ("AP", "Andra Pradesh"),
     ("BR", "Bihar"),
     ("CG", "Chhattisgarh"),
     ("CH", "Chandigarh"),
@@ -65,29 +67,6 @@ STUDY_CENTER_STATES = (
     ("WB", "West Bengal"),
 )
 
-STUDY_CENTER_CITIES = {
-    "BR": ("Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia"),
-    "CG": ("Raipur", "Bhilai", "Bilaspur", "Korba", "Durg"),
-    "CH": ("Chandigarh", "CH"),
-    "DL": ("New Delhi", "Delhi"),
-    "GA": ("Panaji", "Vasco da Gama", "Margao", "Mapusa", "Ponda"),
-    "GJ": ("Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"),
-    "HR": ("Faridabad", "Gurugram", "Panipat", "Ambala", "Yamunanagar"),
-    "JH": ("Ranchi", "Jamshedpur", "Dhanbad", "Bokaro Steel City", "Deoghar"),
-    "KA": ("Bengaluru", "Mangaluru"),
-    "KL": ("Thiruvananthapuram", "Kochi", "Kozhikode"),
-    "MH": ("Mumbai", "Pune", "Nagpur", "Thane", "Nashik"),
-    "MP": ("Indore", "Bhopal", "Jabalpur", "Gwalior", "Ujjain"),
-    "OD": ("Bhubaneswar", "Cuttack", "Rourkela", "Sambalpur", "Puri"),
-    "PB": ("Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda"),
-    "RJ": ("Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer"),
-    "TG": ("Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Ramagundam"),
-    "TN": ("Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem"),
-    "UK": ("Dehradun", "Haridwar", "Roorkee", "Haldwani", "Kashipur"),
-    "UP": ("Lucknow", "Kanpur", "Ghaziabad", "Agra", "Meerut"),
-    "WB": ("Kolkata", "Asansol", "Siliguri", "Durgapur", "Bardhaman"),
-}
-
 GROUPS = (
     ("A", "Group A"),
     ("B", "Group B"),
@@ -96,6 +75,27 @@ GROUPS = (
     ("E", "Group E"),
     ("F", "Group F"),
 )
+
+
+class StudyCenter(models.Model):
+    state = models.CharField(max_length=2, choices=STUDY_CENTER_STATES)
+    city = models.CharField(max_length=100)
+    location = models.CharField(max_length=100)
+    address = models.TextField()
+    pin = models.IntegerField(null=True, blank=True)
+    geo = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.state} - {self.city} - {self.location}"
+
+
+class StudyCentrePOC(models.Model):
+    centre = models.ForeignKey(StudyCenter, on_delete=models.CASCADE)
+    person = models.CharField(max_length=50)
+    number = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.centre} - {self.person} - {self.number}"
 
 
 class BatchInfo(models.Model):
@@ -116,20 +116,13 @@ class BatchInfo(models.Model):
     homeState = models.CharField(max_length=100, null=True, blank=True, choices=STATES)
     homeTown = models.CharField(max_length=100, null=True, blank=True)
     currentCity = models.CharField(max_length=100, null=True, blank=True)
-    studyCenterState = models.CharField(
-        max_length=100, choices=STUDY_CENTER_STATES, default="KL"
-    )
-    studyCenterCity = models.CharField(
-        max_length=100,
+    studyCenter = models.OneToOneField(
+        StudyCenter,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        choices=[
-            (city, city)
-            for state_cities in STUDY_CENTER_CITIES.values()
-            for city in state_cities
-        ],
+        related_name="batch_info_sc",
     )
-    studyCenterName = models.CharField(max_length=100, null=True, blank=True)
 
 
 class SocialLinks(models.Model):

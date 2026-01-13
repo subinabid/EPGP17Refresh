@@ -2,6 +2,8 @@
 
 from django.contrib import admin  # type: ignore
 from .models import (
+    StudyCenter,
+    StudyCentrePOC,
     BatchInfo,
     SocialLinks,
     Employment,
@@ -12,6 +14,16 @@ from .models import (
 )
 
 
+@admin.register(StudyCenter)
+class StudyCenterAdmin(admin.ModelAdmin):
+    list_display = ("state", "city", "location")
+
+
+@admin.register(StudyCentrePOC)
+class StudyCenterPOCAdmin(admin.ModelAdmin):
+    list_display = ("centre", "person", "number")
+
+
 @admin.register(BatchInfo)
 class BatchInfoAdmin(admin.ModelAdmin):
     list_display = (
@@ -19,7 +31,7 @@ class BatchInfoAdmin(admin.ModelAdmin):
         "epgp_batch",
         "epgp_group",
         "roll_number",
-        "studyCenterCity",
+        "studyCenter",
         "user__first_name",
         "user__last_name",
         "user__email",

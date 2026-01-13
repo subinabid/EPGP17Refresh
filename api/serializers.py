@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User, Group  # type: ignore
 from .models import (
+    StudyCenter,
+    StudyCentrePOC,
     BatchInfo,
     SocialLinks,
     Employment,
@@ -12,6 +14,23 @@ from rest_framework import serializers  # type: ignore
 
 
 ######################################################################
+## Study Centres
+######################################################################
+
+
+class POCSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudyCentrePOC
+        fields = "__all__"
+
+
+class SCSerilazer(serializers.ModelSerializer):
+    class Meta:
+        model = StudyCenter
+        fields = "__all__"
+
+
+######################################################################
 ## SocialLinks, BatchInfo, Employment serializers
 ######################################################################
 
@@ -19,15 +38,17 @@ from rest_framework import serializers  # type: ignore
 class BatchInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = BatchInfo
-        fields = "__all__"
-        read_only_fields = ["user"]
+        # fields = "__all__"
+        # read_only_fields = ["user"]
+        exclude = ["user"]
 
 
 class SocialLinksSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialLinks
-        fields = "__all__"
-        read_only_fields = ["user"]
+        # fields = "__all__"
+        # read_only_fields = ["user"]
+        exclude = ["user"]
 
 
 class EmploymentSerializer(serializers.ModelSerializer):
@@ -38,7 +59,7 @@ class EmploymentSerializer(serializers.ModelSerializer):
 
 
 ######################################################################
-## user related serializers
+## User related serializers
 ######################################################################
 
 
@@ -108,7 +129,7 @@ class ElectiveOfferingSmallSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ElectiveOffering
-        fields = ["id", "course", "track", "section"]
+        fields = ["id", "term", "course", "track", "section"]
         read_only_fields = ["id"]
 
 

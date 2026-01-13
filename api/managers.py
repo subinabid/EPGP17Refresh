@@ -1,6 +1,8 @@
 """Custom manager for the API app."""
 
-from .models import Elective, Professor
+import csv
+import json
+from .models import Elective, Professor, StudyCenter, StudyCentrePOC
 from .data import electives_list_q5, electives_details_q5
 
 
@@ -263,3 +265,34 @@ def add_electives_with_faculty() -> dict:
 #         "errors": errors,
 #         "message": f"Successfully updated usernames for {updated_count} users.",
 #     }
+
+
+################################################################################
+# Study Centres
+################################################################################
+
+
+def loadStudyCentres():
+    datafile = "locs_processed.csv"
+    with open(datafile, "r", newline="") as sc:
+        info = csv.DictReader(sc)
+        print("Processing.....")
+        for row in info:
+            centre = StudyCenter.objects.create(
+                state=row.get("State", "NA"),
+                city=row.get("City", "NA"),
+                location=row.get("Location", "NA"),
+                address=row.get("Address", "NA"),
+                pin=row.get("Pincode", "NA"),
+            )
+            print("Study centre added", centre)
+
+            contacts = json.loads(row.get("poc_json", []))
+            if len(contacts) > 0:
+                for contact in contacts:
+                    poc = StudyCentrePOC.objects.create(
+                        centre=centre, person=contact["name"], number=contact["number"]
+                    )
+                    print("POC added", poc)
+        print("End of CSV")
+    print("Complete")
