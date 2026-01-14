@@ -38,16 +38,12 @@ class SCSerilazer(serializers.ModelSerializer):
 class BatchInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = BatchInfo
-        # fields = "__all__"
-        # read_only_fields = ["user"]
-        exclude = ["user"]
+        exclude = ["id", "user"]
 
 
 class SocialLinksSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialLinks
-        # fields = "__all__"
-        # read_only_fields = ["user"]
         exclude = ["user"]
 
 
@@ -66,7 +62,13 @@ class EmploymentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ["url", "username", "email", "groups"]
+        fields = [
+            "url",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+        ]
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
@@ -88,6 +90,20 @@ class DetailUserSerializer(serializers.ModelSerializer):
             "last_name",
             "batch_info",
             "social_links",
+        ]
+
+
+class UserBatchSerializer(serializers.ModelSerializer):
+    batch_info = BatchInfoSerializer(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "batch_info",
         ]
 
 

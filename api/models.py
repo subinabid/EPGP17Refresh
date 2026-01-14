@@ -85,6 +85,9 @@ class StudyCenter(models.Model):
     pin = models.IntegerField(null=True, blank=True)
     geo = models.URLField(blank=True, null=True)
 
+    class Meta:
+        ordering = ["state", "city", "location"]
+
     def __str__(self):
         return f"{self.state} - {self.city} - {self.location}"
 

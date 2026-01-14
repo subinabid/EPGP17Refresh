@@ -4,23 +4,19 @@ from django.contrib.auth.models import User  # type: ignore
 from rest_framework.views import APIView  # type: ignore
 from rest_framework.decorators import (  # type: ignore
     api_view,
-    authentication_classes,
     permission_classes,
 )
 from rest_framework.response import Response  # type: ignore
-from rest_framework.authentication import (  # type: ignore
-    SessionAuthentication,
-    BasicAuthentication,
-)
-from rest_framework_simplejwt.authentication import JWTAuthentication  # type: ignore
 from rest_framework.permissions import IsAuthenticated, IsAdminUser  # type: ignore
 from .serializers import (
     SCSerilazer,
     POCSerializer,
     UserSerializer,
+    UserBatchSerializer,
     DetailUserSerializer,
     BatchInfoSerializer,
     SocialLinksSerializer,
+    ElectiveSerializer,
     ElectiveOfferingSmallSerializer,
     ElectiveEnrollmentSerializer,
     ElectiveDetailSerializer,
@@ -30,6 +26,7 @@ from .models import (
     StudyCentrePOC,
     BatchInfo,
     SocialLinks,
+    Elective,
     ElectiveOffering,
     ElectiveEnrollment,
 )
@@ -40,16 +37,13 @@ from .models import (
 ################################################################################
 
 
+## /api/users/
 class ListUsers(APIView):
     """
     View to list all users in the system.
-    * Only admin users are able to access this view.
+    Only admin users are able to access this view.
     """
 
-    authentication_classes = [
-        SessionAuthentication,
-        BasicAuthentication,
-    ]
     permission_classes = [IsAdminUser]
 
     def get(self, request, format=None):
@@ -58,6 +52,7 @@ class ListUsers(APIView):
         return Response(serializer.data)
 
 
+## /api/users/create/
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def create_user(request):
@@ -106,6 +101,7 @@ def create_user(request):
             return Response({"error": str(e)}, status=400)
 
 
+## /api/user/change-pwd/
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def change_password(request):
@@ -130,6 +126,7 @@ def change_password(request):
     return Response({"message": "Password changed successfully"}, status=200)
 
 
+## /api/users/update/id
 @api_view(["PUT", "PATCH"])
 @permission_classes([IsAdminUser])
 def update_user_admin(request, pk):
@@ -141,6 +138,7 @@ def update_user_admin(request, pk):
     return update_user(request, pk)
 
 
+## /api/users/update/
 @api_view(["PUT", "PATCH"])
 @permission_classes([IsAuthenticated])
 def update_user_self(request):
@@ -152,10 +150,7 @@ def update_user_self(request):
     return update_user(request, request.user.id)
 
 
-########################################
 ##  Helper function to update user
-
-
 def update_user(request, pk):
     """
     Update an existing user by ID.
@@ -195,124 +190,112 @@ def update_user(request, pk):
         return Response({"error": str(e)}, status=400)
 
 
-########################################
-
-
-@api_view(["GET"])
-@authentication_classes(
-    [
-        JWTAuthentication,
-        SessionAuthentication,
-        BasicAuthentication,
-    ]
-)
-@permission_classes([IsAuthenticated])
-def userinfo(request):
-    content = {
-        "user": str(request.user),
-        "detail": DetailUserSerializer(request.user).data,
-    }
-    return Response(content)
-
-
+## /api/user/
+## /api/users/id/
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def get_user_queryset(request, pk):
+def userinfo(request, pk=None):
+    """Get detailed info of a user"""
+    id = pk if pk else request.user.id
     try:
-        user = User.objects.get(id=pk)
+        user = User.objects.get(id=id)
         serializer = DetailUserSerializer(user)
         return Response(serializer.data)
     except User.DoesNotExist:
-        return Response({"error": f"User with id {pk} does not exist"}, status=404)
+        return Response({"error": f"User with id {id} does not exist"}, status=404)
 
 
 ################################################################################
-## User information
+## User information - Batch info, Social links and jobs (TBD)
 ################################################################################
 
 
+def get_batch_info(user):
+    """Helper function to get batch info by user"""
+    try:
+        batch_info = BatchInfo.objects.get(user=user)
+        serializer = BatchInfoSerializer(batch_info)
+        return Response(serializer.data)
+    except BatchInfo.DoesNotExist:
+        return Response({"error": f"No BatchInfo found for user {user}"}, status=404)
+
+
+def update_batch_info(user, data):
+    """Helper function to update batch info by user"""
+    try:
+        batch_info_obj, created = BatchInfo.objects.get_or_create(user=user)
+        serializer = BatchInfoSerializer(batch_info_obj, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            status_code = 201 if created else 200
+            return Response(serializer.data, status=status_code)
+        return Response(serializer.errors, status=400)
+    except User.DoesNotExist:
+        return Response({"error": f"User with id {user} does not exist"}, status=404)
+
+
+def get_social_links(user):
+    """Helper function to get social links by user"""
+    try:
+        social_links = SocialLinks.objects.get(user=user)
+        serializer = SocialLinksSerializer(social_links)
+        return Response(serializer.data)
+    except SocialLinks.DoesNotExist:
+        return Response({"error": f"No SocialLinks found for user {user}"}, status=404)
+
+
+def update_social_link(user, data):
+    """Helper function to update social ink by user"""
+    try:
+        social_links, created = SocialLinks.objects.get_or_create(user=user)
+        serializer = SocialLinksSerializer(social_links, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            status_code = 201 if created else 200
+            return Response(serializer.data, status=status_code)
+        return Response(serializer.errors, status=400)
+    except User.DoesNotExist:
+        return Response({"error": f"User with id {user} does not exist"}, status=404)
+
+
+## /api/user/batch
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def batch_info(request):
-    """Get BatchInfo for a specific user by user ID."""
+    """Get or update Batch Info for a logged in user"""
     if request.method == "GET":
-        try:
-            batch_info = BatchInfo.objects.get(user=request.user)
-            serializer = BatchInfoSerializer(batch_info)
-            return Response(serializer.data)
-        except BatchInfo.DoesNotExist:
-            return Response(
-                {"error": f"No BatchInfo found for user {request.user}"}, status=404
-            )
+        return get_batch_info(request.user)
 
     elif request.method == "POST":
-        try:
-            batch_info_obj, created = BatchInfo.objects.get_or_create(user=request.user)
-            serializer = BatchInfoSerializer(
-                batch_info_obj, data=request.data, partial=True
-            )
-            if serializer.is_valid():
-                serializer.save()
-                status_code = 201 if created else 200
-                return Response(serializer.data, status=status_code)
-            return Response(serializer.errors, status=400)
-        except User.DoesNotExist:
-            return Response(
-                {"error": f"User with id {request.user} does not exist"}, status=404
-            )
+        return update_batch_info(user=request.user, data=request.data)
 
 
+## /api/users/id/batch
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def batch_info_by_id(request, pk):
+    """Get Batch Info for a specific user by ID."""
+    return get_batch_info(user=pk)
+
+
+## /api/user/social
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
-def update_social_links(request):
-    """Update SocialLinks for a specific user by user ID."""
-    try:
-        social_links = SocialLinks.objects.get(user=request.user)
-    except SocialLinks.DoesNotExist:
-        return Response(
-            {"error": f"No SocialLinks found for user {request.user}"}, status=404
-        )
-
-    if request.method in ["PUT", "PATCH"]:
-        serializer = SocialLinksSerializer(
-            social_links, data=request.data, partial=(request.method == "PATCH")
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-
-@api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
-def get_social_links(request):
-    """Get or create SocialLinks for a specific user by user ID."""
+def social_links(request):
+    """Get or create SocialLinks for a logged in user."""
     if request.method == "GET":
-        try:
-            social_links = SocialLinks.objects.get(user__id=request.user.id)
-            serializer = SocialLinksSerializer(social_links)
-            return Response(serializer.data)
-        except SocialLinks.DoesNotExist:
-            return Response(
-                {"error": f"No SocialLinks found for user {request.user}"}, status=404
-            )
+        return get_social_links(request.user)
 
     elif request.method == "POST":
-        try:
-            user = User.objects.get(id=request.user.id)
-            social_links, created = SocialLinks.objects.get_or_create(user=user)
-            serializer = SocialLinksSerializer(
-                social_links, data=request.data, partial=True
-            )
-            if serializer.is_valid():
-                serializer.save()
-                status_code = 201 if created else 200
-                return Response(serializer.data, status=status_code)
-            return Response(serializer.errors, status=400)
-        except User.DoesNotExist:
-            return Response(
-                {"error": f"User with id {request.user} does not exist"}, status=404
-            )
+        return update_social_link(user=request.user, data=request.data)
+
+
+## /api/users/id/social
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def social_links_by_id(request, pk):
+    """Get SocialLinks for a specific user by user ID."""
+    return get_social_links(user=pk)
 
 
 ################################################################################
@@ -320,20 +303,41 @@ def get_social_links(request):
 ################################################################################
 
 
+## /api/electives/all/
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def list_electives(request):
-    """List all Elective offerings."""
+def list_all_electives(request):
+    """List all elective subjects offered across years"""
 
-    electives = ElectiveOffering.objects.all().order_by(
-        "course__area", "course__course_code", "section"
-    )
-    serializer = ElectiveOfferingSmallSerializer(
-        electives, many=True, context={"request": request}
+    electives = Elective.objects.all().order_by("area", "course_code")
+    serializer = ElectiveSerializer(
+        electives,
+        many=True,
+        context={"request": request},
     )
     return Response(serializer.data)
 
 
+## /api/electives/
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_electives_for_user(request):
+    """List all elective offerings for the user's batch."""
+
+    batch = BatchInfo.objects.get(user=request.user).epgp_batch
+
+    electives = ElectiveOffering.objects.filter(epgp_batch=batch).order_by(
+        "course__area", "course__course_code", "section"
+    )
+    serializer = ElectiveOfferingSmallSerializer(
+        electives,
+        many=True,
+        context={"request": request},
+    )
+    return Response(serializer.data)
+
+
+## /api/electives/id/
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def elective_detail(request, pk):
@@ -351,6 +355,7 @@ def elective_detail(request, pk):
         )
 
 
+## /api/electives/id/takers/
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def elective_takers(request, pk):
@@ -362,9 +367,7 @@ def elective_takers(request, pk):
             elective_offering=elective_offering
         )
         users = [enrollment.user for enrollment in enrollments]
-        serializer = DetailUserSerializer(
-            users, many=True, context={"request": request}
-        )
+        serializer = UserBatchSerializer(users, many=True, context={"request": request})
         return Response(serializer.data)
     except ElectiveOffering.DoesNotExist:
         return Response(
@@ -372,22 +375,37 @@ def elective_takers(request, pk):
         )
 
 
+# Helper function for a user's elective
+def get_electives_by_user(user):
+    """List all electives enrolled by a user"""
+    enrollments = ElectiveEnrollment.objects.filter(user=user)
+    serializer = ElectiveEnrollmentSerializer(enrollments, many=True)
+    return Response(serializer.data, status=200)
+
+
+## /api/electives/enrolled/
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def enrolled_elective(request):
     """Enrolled electives of the authenticated user."""
-
-    enrollments = ElectiveEnrollment.objects.filter(user=request.user)
-    serializer = ElectiveEnrollmentSerializer(
-        enrollments, many=True, context={"request": request}
-    )
-    return Response(serializer.data)
+    return get_electives_by_user(user=request.user)
 
 
+## /api/users/<int:pk>/electives/
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def electives_by_user(request, pk):
+    """Enrolled electives by a user"""
+    return get_electives_by_user(user=pk)
+
+
+## /api/electives/enroll/id/
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def enroll_elective(request, pk):
-    """Enroll the authenticated user in an elective offering."""
+    """Get status of or enroll in an elective for logged in user
+    POST: Enroll the authenticated user in an elective offering.
+    GET: Return true if already enrolled else false"""
     if request.method == "POST":
         try:
             elective_offering = ElectiveOffering.objects.get(id=pk)
@@ -439,14 +457,10 @@ def enroll_elective(request, pk):
 ################################################################################
 
 
+## /api/centres/
 class StudyCentresView(APIView):
     """List all study centres"""
 
-    authentication_classes = [
-        JWTAuthentication,
-        SessionAuthentication,
-        BasicAuthentication,
-    ]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
@@ -455,14 +469,10 @@ class StudyCentresView(APIView):
         return Response(serializer.data)
 
 
+## /api/centres/id/POC
 class StudyCentrePOCView(APIView):
     """List all study centre POCs"""
 
-    authentication_classes = [
-        JWTAuthentication,
-        SessionAuthentication,
-        BasicAuthentication,
-    ]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id, format=None):
